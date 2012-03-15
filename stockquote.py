@@ -45,6 +45,8 @@ Examples:
 
 
 @author Martin Dengler
+@author Corey Goldberg
+@author Alex K (from http://coreygoldberg.blogspot.com/2011/09/python-stock-quotes-from-google-finance.html?showComment=1317261837589#c1165604274543334045 )
 
 Copyright 2012
 
@@ -105,7 +107,7 @@ CODES_GOOGLE = {
 def from_google(symbol):
     url = 'http://finance.google.com/finance/info?q=%s' % symbol
     lines = urllib2.urlopen(url).read().splitlines()
-    raw_dict = json.loads(''.join([x for x in lines
+    raw_dict = json.loads(''.join([x.decode("utf-8").strip() for x in lines
                                    if x not in ('// [', ']')]))
     normalized_dict = dict([(CODES_GOOGLE.get(key, "UNKNOWN_KEY_%s" % key),
                              value)
