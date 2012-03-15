@@ -3,9 +3,7 @@
 
 """
 
-Reads stock quotes from finance.yahoo.com and finance.google.com
-
-Gets stock quotes from yahoo and google finance, and historical prices from yahoo finance.
+Gets stock quotes from Yahoo and Google Finance, and historical prices from Yahoo Finance.
 
 Examples:
 
