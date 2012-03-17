@@ -9,7 +9,7 @@ Examples:
 
 >>> import stockquote, os
 
->>> h = list(stockquote.historical("GOOG", "20010101", "20101231"))
+>>> h = list(stockquote.historical_prices("GOOG", "20010101", "20101231"))
 >>> print os.linesep.join(["%25s: %s" % (k, h[0][k]) for k in sorted(h[0].keys())])
                 Adj Close: 593.97
                     Close: 593.97
@@ -61,7 +61,6 @@ without turning into http://www.goldb.org/ystockquote.html .
 
 import csv
 import json
-import pprint
 import urllib2
 
 CODES_YAHOO = {
@@ -110,18 +109,26 @@ def from_google(symbol):
     normalized_dict = dict([(CODES_GOOGLE.get(key, "UNKNOWN_KEY_%s" % key),
                              value)
                             for key, value in raw_dict.iteritems()])
+    normalized_dict["source_url"] = url
     return normalized_dict
 
 
 def from_yahoo(symbol):
-    stats = "l1c1va2xj1b4j4dyekjm3m4rr5p5p6s7" # Yahoo craziness
-    url = 'http://download.finance.yahoo.com/quotes.csv?s=%s&f=%s' % (symbol, stats)
-    #"http://download.finance.yahoo.com/d/quotes.csv?s=%sфsl1d1t1c1ohgvе" % symbol
-    raw_dict = urllib.urlopen(url).read().strip().strip('"')
-    normalized_dict = dict([(CODES_YAHOO.get(key, "UNKNOWN_KEY_%s" % key),
-                             value)
-                            for key, value in raw_dict.iteritems()])
-    return normalized_dict
+    if "." in symbol:
+        symbol = symbol[:symbol.index(".")]
+    stats = CODES_YAHOO.keys()
+    url = 'http://download.finance.yahoo.com/d/quotes.csv?s=%s&f=%s&e=.csv' % (
+        symbol, "".join(stats))
+    csv_string = urllib2.urlopen(url).read().strip()
+    lines = [csv_string]
+    csv_reader = csv.DictReader(lines, fieldnames=stats)
+    csv_results = list(csv_reader)
+    first_result_all = csv_results[0]
+    first_result = dict([(CODES_YAHOO.get(k, "UNKNOWN_KEY_%s" % k), v)
+                         for k, v in first_result_all.iteritems()
+                         if v is not None])
+    first_result["source_url"] = url
+    return first_result
 
 
 def historical_prices(symbol, start_date, end_date):
@@ -142,7 +149,20 @@ def historical_prices(symbol, start_date, end_date):
           'ignore=.csv'
     lines = urllib2.urlopen(url).readlines()
     csv_reader = csv.DictReader(lines[1:], fieldnames=lines[0].strip().split(","))
-    return csv_reader
+    prices = [dict(csv_line) for csv_line in csv_reader]
+    for price_dict in prices:
+        price_dict["source_url"] = url
+    return prices
 
 
+
+if __name__ == "__main__":
+    import sys, os
+    for ticker in sys.argv[1:]:
+        for quote in from_yahoo(ticker), from_google(ticker):
+            sys.stdout.write("Quote from %s\n" % quote["source_url"])
+            sys.stdout.write(os.linesep.join(["%28s: %s" % (k, quote[k])
+                                              for k in sorted(quote.keys())
+                                              if k != "source_url"]))
+            sys.stdout.write("\n")
 
