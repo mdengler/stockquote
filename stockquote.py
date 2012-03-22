@@ -99,13 +99,49 @@ CODES_GOOGLE = {
     "t": "symbol",
     }
 
+REUTERS_TO_GOOGLE = {
+    ".N225": "INDEXNIKKEI:NI225",
+}
+
+GOOGLE_EXCHANGES = {
+    "NYSE": "New York Stock Exchange",
+    "NASDAQ": "The NASDAQ Stock Market, Inc. – NASDAQ Last Sale",
+    "NYSEAMEX": "NYSE AMEX",
+    "NYSEARCA": "NYSE ARCA",
+    "OTC": "FINRA OTC Bulletin Board",
+    "PINK": "FINRA OTC Bulletin Board",
+    "TSE": "Toronto Stock Exchange",
+    "CVE": "Toronto TSX Ventures Exchange",
+    "OPRA": "Option Chains",
+    "LON": "London Stock Exchange",
+    "FRA": "Deutsche Börse Frankfurt Stock Exchange",
+    "ETR": "Deutsche Börse XETRA",
+    "BIT": "Borsa Italiana Milan Stock Exchange",
+    "EPA": "NYSE Euronext Paris",
+    "EBR": "NYSE Euronext Brussels",
+    "ELI": "NYSE Euronext Lisbon",
+    "AMS": "NYSE Euronext Amsterdam",
+    "BOM": "Bombay Stock Exchange Limited",
+    "NSE": "National Stock Exchange of India",
+    "SHA": "Shanghai Stock Exchange",
+    "SHE": "Shenzhen Stock Exchange",
+    "TPE": "Taiwan Stock Exchange",
+    "HKG": "Hong Kong Stock Exchange",
+    "TYO": "Tokyo Stock Exchange",
+    "ASX": "Australian Securities Exchange",
+    "NZE": "New Zealand Stock Exchange",
+}
+
 
 
 def from_google(symbol):
-    url = 'http://finance.google.com/finance/info?q=%s' % symbol
+    if symbol.startswith("."):
+        symbol = REUTERS_TO_GOOGLE.get(symbol, symbol)
+    url = 'http://www.google.com/finance/info?q=%s' % symbol
     lines = urllib2.urlopen(url).read().splitlines()
     raw_dict = json.loads(''.join([x.decode("utf-8", "replace").strip() for x in lines
                                    if x not in ('// [', ']')]))
+
     normalized_dict = dict([(CODES_GOOGLE.get(key, "UNKNOWN_KEY_%s" % key),
                              value)
                             for key, value in raw_dict.iteritems()])
