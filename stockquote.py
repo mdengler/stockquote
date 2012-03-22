@@ -61,7 +61,7 @@ without turning into http://www.goldb.org/ystockquote.html .
 
 import csv
 import json
-import urllib2
+import urllib, urllib2
 
 CODES_YAHOO = {
     "l1": "price_last",
@@ -150,12 +150,15 @@ def from_google(symbol):
 
 
 def from_yahoo(symbol):
-    if "." in symbol:
+    if symbol.startswith("."):
+        symbol = "^" + symbol[1:]
+    elif "." in symbol:
         symbol = symbol[:symbol.index(".")]
     stats = CODES_YAHOO.keys()
-    url = 'http://download.finance.yahoo.com/d/quotes.csv?s=%s&f=%s&e=.csv' % (
-        symbol, "".join(stats))
-    csv_string = urllib2.urlopen(url).read().strip()
+    url = 'http://download.finance.yahoo.com/d/quotes.csv?'
+    fields = {"s": symbol, "f": "".join(stats), "e": ".csv"}
+    url += urllib.urlencode(fields)
+    csv_string = urllib.urlopen(url).read().strip()
     lines = [csv_string]
     csv_reader = csv.DictReader(lines, fieldnames=stats)
     csv_results = list(csv_reader)
@@ -196,7 +199,7 @@ if __name__ == "__main__":
     import sys, os
     for ticker in sys.argv[1:]:
         for quote in from_yahoo(ticker), from_google(ticker):
-            sys.stdout.write("Quote from %s\n" % quote["source_url"])
+            sys.stderr.write("Quote from %s\n" % quote["source_url"])
             sys.stdout.write(os.linesep.join(["%28s: %s" % (k, quote[k])
                                               for k in sorted(quote.keys())
                                               if k != "source_url"]))
