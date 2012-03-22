@@ -104,7 +104,7 @@ CODES_GOOGLE = {
 def from_google(symbol):
     url = 'http://finance.google.com/finance/info?q=%s' % symbol
     lines = urllib2.urlopen(url).read().splitlines()
-    raw_dict = json.loads(''.join([x.decode("utf-8").strip() for x in lines
+    raw_dict = json.loads(''.join([x.decode("utf-8", "replace").strip() for x in lines
                                    if x not in ('// [', ']')]))
     normalized_dict = dict([(CODES_GOOGLE.get(key, "UNKNOWN_KEY_%s" % key),
                              value)
