@@ -435,10 +435,8 @@ def historical_quotes(symbol, start_date, end_date):
 
 
 def format_quote(quote):
-    sys.stderr.write("Quote from %s\n" % quote["source_url"])
     sys.stdout.write(os.linesep.join(["%28s: %s" % (k, quote[k])
-                                      for k in sorted(quote.keys())
-                                      if k != "source_url"]))
+                                      for k in sorted(quote.keys())]))
     sys.stdout.write("\n")
 
 
