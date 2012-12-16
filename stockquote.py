@@ -363,6 +363,7 @@ def from_google(symbol):
                              value)
                             for key, value in raw_dict.iteritems()])
     normalized_dict["source_url"] = url
+    normalized_dict["source"] = "Google"
     return normalized_dict
 
 
@@ -384,6 +385,7 @@ def from_yahoo(symbol):
                          for k, v in first_result_all.iteritems()
                          if v is not None])
     first_result["source_url"] = url
+    first_result["source"] = "Yahoo!"
     return first_result
 
 
@@ -430,6 +432,7 @@ def historical_quotes(symbol, start_date, end_date):
 
     for price_dict in prices:
         price_dict["source_url"] = url
+        price_dict["source"] = "Yahoo!"
 
     return prices
 
