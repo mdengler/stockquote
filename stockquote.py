@@ -21,24 +21,17 @@ Examples:
 
 >>> q = stockquote.from_google("GOOG")
 >>> print os.linesep.join(["%25s: %s" % (k, q[k]) for k in sorted(q.keys())])
-         UNKNOWN_KEY_ccol: chr
-           UNKNOWN_KEY_ec: -0.07
-        UNKNOWN_KEY_eccol: chr
-          UNKNOWN_KEY_ecp: -0.01
-       UNKNOWN_KEY_el_cur: 615.92
-           UNKNOWN_KEY_id: 694653
-        UNKNOWN_KEY_l_cur: 615.99
-            UNKNOWN_KEY_s: 1
-          UNKNOWN_KEY_yld: 
-                   change: -1.79
-                 dividend: 
+         GOOGLE_CODE_ccol: chr
+           GOOGLE_CODE_id: 694653
+        GOOGLE_CODE_l_cur: 701.96
+            GOOGLE_CODE_s: 0
+                   change: -0.74
                  exchange: NASDAQ
-              price_close: -0.29
-               price_last: 615.99
-      price_last_datetime: Mar 14, 4:00PM EDT
-      price_last_exchange: 615.92
- price_last_exchange_time: Mar 15, 4:13AM EDT
-          price_last_time: 4:00PM EDT
+              price_close: -0.10
+               price_last: 701.96
+      price_last_datetime: Dec 14, 4:00PM EST
+          price_last_time: 4:00PM EST
+               source_url: http://www.google.com/finance/info?q=GOOG
                    symbol: GOOG
 
 
@@ -366,7 +359,7 @@ def from_google(symbol):
     raw_dict = json.loads(''.join([x.decode("utf-8", "replace").strip() for x in lines
                                    if x not in ('// [', ']')]))
 
-    normalized_dict = dict([(CODES_GOOGLE.get(key, "UNKNOWN_KEY_%s" % key),
+    normalized_dict = dict([(CODES_GOOGLE.get(key, "GOOGLE_CODE_%s" % key),
                              value)
                             for key, value in raw_dict.iteritems()])
     normalized_dict["source_url"] = url
@@ -387,7 +380,7 @@ def from_yahoo(symbol):
     csv_reader = csv.DictReader(lines, fieldnames=stats)
     csv_results = list(csv_reader)
     first_result_all = csv_results[0]
-    first_result = dict([(CODES_YAHOO.get(k, "UNKNOWN_KEY_%s" % k), v)
+    first_result = dict([(CODES_YAHOO.get(k, "YAHOO_CODE_%s" % k), v)
                          for k, v in first_result_all.iteritems()
                          if v is not None])
     first_result["source_url"] = url
