@@ -9,7 +9,7 @@ Examples:
 
 >>> import stockquote, os
 
->>> h = list(stockquote.historical_prices("GOOG", "20010101", "20101231"))
+>>> h = list(stockquote.historical_quotes("GOOG", "20010101", "20101231"))
 >>> print os.linesep.join(["%25s: %s" % (k, h[0][k]) for k in sorted(h[0].keys())])
                 Adj Close: 593.97
                     Close: 593.97
@@ -60,7 +60,9 @@ without turning into http://www.goldb.org/ystockquote.html .
 """
 
 import csv
+import dateutil.parser
 import json
+import optparse
 import urllib, urllib2
 
 
@@ -392,38 +394,143 @@ def from_yahoo(symbol):
     return first_result
 
 
-def historical_prices(symbol, start_date, end_date):
+def historical_quotes(symbol, start_date, end_date):
     """
-    Get historical prices for the given ticker symbol.
-    Date format is 'YYYYMMDD'
+    Get historical quotes for the given ticker symbol.
+
+    Date format is 'YYYYMMDD', or anything understood by
+    dateutil.parser.parse, or a datetime instance.
 
     Returns a nested list.
     """
-    url = 'http://ichart.yahoo.com/table.csv?s=%s&' % symbol + \
-          'd=%s&' % str(int(end_date[4:6]) - 1) + \
-          'e=%s&' % str(int(end_date[6:8])) + \
-          'f=%s&' % str(int(end_date[0:4])) + \
-          'g=d&' + \
-          'a=%s&' % str(int(start_date[4:6]) - 1) + \
-          'b=%s&' % str(int(start_date[6:8])) + \
-          'c=%s&' % str(int(start_date[0:4])) + \
-          'ignore=.csv'
+    if isinstance(start_date, str):
+        start_date = datetime.parser.parse(start_date)
+    if isinstance(end_date, str):
+        end_date = datetime.parser.parse(end_date)
+
+    url = ("http://ichart.yahoo.com/table.csv?"
+           "s=%s&"
+
+           "d=%s&"
+           "e=%s&"
+           "f=%s&"
+
+           "a=%s&"
+           "b=%s&"
+           "c=%s&"
+
+           "g=d&"
+           "ignore=.csv"
+           % (symbol,
+              end_date.month - 1,
+              end_date.day,
+              end_date.year,
+              start_date.month - 1,
+              start_date.day,
+              start_date.year,
+              ))
+
     lines = urllib2.urlopen(url).readlines()
     csv_reader = csv.DictReader(lines[1:], fieldnames=lines[0].strip().split(","))
+
     prices = [dict(csv_line) for csv_line in csv_reader]
+
     for price_dict in prices:
         price_dict["source_url"] = url
+
     return prices
+
+
+def format_quote(quote):
+    sys.stderr.write("Quote from %s\n" % quote["source_url"])
+    sys.stdout.write(os.linesep.join(["%28s: %s" % (k, quote[k])
+                                      for k in sorted(quote.keys())
+                                      if k != "source_url"]))
+    sys.stdout.write("\n")
+
+
+def format_quote_csv(quote, csv_writer=None, outfh=None):
+    if outfh is None:
+        outfh = sys.stdout
+    if csv_writer is None:
+        csv_writer = csv.DictWriter(outfh, quote.keys())
+    csv_writer.writerow(quote)
+
+
+def format_quote_json(quote, outfh=None):
+    if outfh is None:
+        outfh = sys.stdout
+    outfh.write(json.dumps(quote))
+    outfh.write("\n")
+
 
 
 
 if __name__ == "__main__":
     import sys, os
-    for ticker in sys.argv[1:]:
-        for quote in from_yahoo(ticker), from_google(ticker):
-            sys.stderr.write("Quote from %s\n" % quote["source_url"])
-            sys.stdout.write(os.linesep.join(["%28s: %s" % (k, quote[k])
-                                              for k in sorted(quote.keys())
-                                              if k != "source_url"]))
-            sys.stdout.write("\n")
+
+    parser = optparse.OptionParser()
+    parser.add_option("-s", "--start", dest="date_start",
+                      help="start date of quotes wanted (inclusive)")
+    parser.add_option("-e", "--end", dest="date_end",
+                      help="end date of quotes wanted (inclusive)")
+    parser.add_option("--csv", action="store_true",
+                      help="write csv as output (default is formatted text)")
+    parser.add_option("--json", action="store_true",
+                      help="write json as output (default is formatted text)")
+    parser.add_option("--format",
+                      help="output format: formatted text, json, csv")
+    options, symbols = parser.parse_args()
+
+    date_options = (options.date_start, options.date_end)
+    if any(date_options):
+        if not all(date_options):
+            sys.stderr.write("must specify both --start and --end (got: %s)\n"
+                             % ("--start: %s; --to: %s" % (options.date_start,
+                                                           options.date_end)))
+            sys.exit(1)
+
+        options.date_start = dateutil.parser.parse(options.date_start)
+        options.date_end   = dateutil.parser.parse(options.date_end)
+
+    want_format = options.format
+    if options.csv:
+        want_format = "csv"
+    if options.json:
+        want_format = "json"
+
+    if want_format == "csv":
+        options.csv = True
+    if want_format == "json":
+        options.json = True
+
+    formatters = {
+        "json": format_quote_json,
+        "csv" : format_quote_csv,
+        }
+
+
+    quotes = []
+    for symbol in symbols:
+        if any(date_options):
+            quotes.extend(historical_quotes(symbol,
+                                            options.date_start,
+                                            options.date_end))
+        else:
+            quotes.append(from_yahoo(symbol))
+            quotes.append(from_google(symbol))
+
+    format_quote = formatters.get(want_format, format_quote)
+
+    # csv output has a bit of state, so handle that here...
+    if options.csv:
+        quote_fields = set()
+        for q in quotes:
+            quote_fields.update(set(q.keys()))
+        csv_writer = csv.DictWriter(sys.stdout, fieldnames=quote_fields)
+        csv_writer.writeheader()
+        format_quote = lambda quote: format_quote_csv(quote, csv_writer=csv_writer)
+
+    for quote in quotes:
+        format_quote(quote)
 
