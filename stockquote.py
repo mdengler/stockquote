@@ -431,6 +431,7 @@ def historical_quotes(symbol, start_date, end_date):
     prices = [dict(csv_line) for csv_line in csv_reader]
 
     for price_dict in prices:
+        price_dict["symbol"] = symbol
         price_dict["source_url"] = url
         price_dict["source"] = "Yahoo!"
 
@@ -456,6 +457,38 @@ def format_quote_json(quote, outfh=None):
         outfh = sys.stdout
     outfh.write(json.dumps(quote))
     outfh.write("\n")
+
+
+def _get_csv_writer(quotes):
+    quote_fields = set()
+    for q in quotes:
+        quote_fields.update(set(q.keys()))
+    header_fields_first = ["symbol",
+                           "Date",
+                           ]
+    header_fields_last = ["source",
+                          "source_url",
+                          ]
+    quote_fields = (header_fields_first
+                    + list((quote_fields
+                            - set(header_fields_first)
+                            - set(header_fields_last)))
+                    + header_fields_last)
+    return csv.DictWriter(sys.stdout, fieldnames=quote_fields)
+
+
+def get(symbol, start_date=None, end_date=None):
+    quotes = []
+
+    if any((start_date, end_date)):
+        quotes.extend(historical_quotes(symbol,
+                                        options.date_start,
+                                        options.date_end))
+    else:
+        quotes.append(from_yahoo(symbol))
+        quotes.append(from_google(symbol))
+
+    return quotes
 
 
 
@@ -503,25 +536,17 @@ if __name__ == "__main__":
         "csv" : format_quote_csv,
         }
 
-
     quotes = []
     for symbol in symbols:
-        if any(date_options):
-            quotes.extend(historical_quotes(symbol,
-                                            options.date_start,
-                                            options.date_end))
-        else:
-            quotes.append(from_yahoo(symbol))
-            quotes.append(from_google(symbol))
+        quotes.extend(get(symbol,
+                          start_date=options.date_start,
+                          end_date=options.date_end))
 
     format_quote = formatters.get(want_format, format_quote)
 
     # csv output has a bit of state, so handle that here...
     if options.csv:
-        quote_fields = set()
-        for q in quotes:
-            quote_fields.update(set(q.keys()))
-        csv_writer = csv.DictWriter(sys.stdout, fieldnames=quote_fields)
+        csv_writer = _get_csv_writer(quotes)
         csv_writer.writeheader()
         format_quote = lambda quote: format_quote_csv(quote, csv_writer=csv_writer)
 
