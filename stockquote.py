@@ -399,9 +399,9 @@ def historical_quotes(symbol, start_date, end_date):
     Returns a nested list.
     """
     if isinstance(start_date, str):
-        start_date = datetime.parser.parse(start_date)
+        start_date = dateutil.parser.parse(start_date)
     if isinstance(end_date, str):
-        end_date = datetime.parser.parse(end_date)
+        end_date = dateutil.parser.parse(end_date)
 
     url = ("http://ichart.yahoo.com/table.csv?"
            "s=%s&"
