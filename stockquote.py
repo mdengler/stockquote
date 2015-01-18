@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""
-
-Gets stock quotes from Yahoo and Google Finance, and historical prices from Yahoo Finance.
+"""Gets stock quotes from Yahoo and Google Finance, and historical prices from
+Yahoo Finance.
 
 Examples:
 
@@ -47,8 +46,6 @@ TODO: There is much to do.  This is just a 15 minute hack job to
 extend
 http://coreygoldberg.blogspot.com/2011/09/python-stock-quotes-from-google-finance.html
 without turning into http://www.goldb.org/ystockquote.html .
-
-
 
 """
 
