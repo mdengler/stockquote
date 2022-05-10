@@ -1,3 +1,10 @@
+
+---
+Yahoo! Finance's API has changed significantly in the last decade, so this project is of
+limited practical use.  Use https://pypi.org/project/yfinance/ instead.
+---
+
+
 Gets stock quotes from Yahoo and Google Finance, and historical prices from Yahoo Finance.
 
 Examples:
