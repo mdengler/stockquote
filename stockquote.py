@@ -53,7 +53,7 @@ import csv
 import dateutil.parser
 import json
 import optparse
-import urllib, urllib2
+import requests
 
 
 CODES_YAHOO = {
@@ -352,7 +352,7 @@ def from_google(symbol):
     if symbol.startswith("."):
         symbol = REUTERS_TO_GOOGLE.get(symbol, symbol)
     url = 'http://www.google.com/finance/info?q=%s' % symbol
-    lines = urllib2.urlopen(url).read().splitlines()
+    lines = requests.get(url).splitlines()
     raw_dict = json.loads(''.join([x.decode("utf-8", "replace").strip() for x in lines
                                    if x not in ('// [', ']')]))
 
@@ -372,8 +372,7 @@ def from_yahoo(symbol):
     stats = CODES_YAHOO.keys()
     url = 'http://download.finance.yahoo.com/d/quotes.csv?'
     fields = {"s": symbol, "f": "".join(stats), "e": ".csv"}
-    url += urllib.urlencode(fields)
-    csv_string = urllib.urlopen(url).read().strip()
+    csv_string = requests.get(url, data=fields).result.strip()
     lines = [csv_string]
     csv_reader = csv.DictReader(lines, fieldnames=stats)
     csv_results = list(csv_reader)
@@ -422,7 +421,7 @@ def historical_quotes(symbol, start_date, end_date):
               start_date.year,
               ))
 
-    lines = urllib2.urlopen(url).readlines()
+    lines = requests.get(url).readlines()
     csv_reader = csv.DictReader(lines[1:], fieldnames=lines[0].strip().split(","))
 
     prices = [dict(csv_line) for csv_line in csv_reader]
