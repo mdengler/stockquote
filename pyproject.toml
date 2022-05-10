@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "stockquote"
+version = "3.0.0"
+description = "Gets stock quotes from Yahoo and Google Finance, and historical prices from Yahoo Finance."
+authors = ["Martin Dengler <martin@martindengler.com>"]
+license = "GPLv3"
+
+[tool.poetry.dependencies]
+python = ">= 3.8,<4"
+python-dateutil = "*"
+requests = ">= 2"
+urllib3 = "^1.26.9"
+
+[tool.poetry.dev-dependencies]
+pytest = "*"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.pytest]
+doctest_optionflags = ["NORMALIZE_WHITESPACE", "IGNORE_EXCEPTION_DETAIL", "NUMBER", "ELLIPSIS"]
